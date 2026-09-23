@@ -1,43 +1,92 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Robot starting position
-robot_x = 2
-robot_y = 7
+# -----------------------------
+# Robot initial state
+# -----------------------------
+x = 1.0
+y = 1.0
+theta = 0.0
 
-# Target position
-target_x = 8
-target_y = 3
+# -----------------------------
+# Robot motion parameters
+# -----------------------------
+v = 1.0          # Linear velocity
+omega = 0.25     # Angular velocity
+dt = 0.05        # Simulation timestep
+simulation_time = 20
 
+# -----------------------------
+# Store robot trajectory
+# -----------------------------
+trajectory_x = []
+trajectory_y = []
+
+# -----------------------------
+# Simulation loop
+# -----------------------------
+time_steps = int(simulation_time / dt)
+
+for _ in range(time_steps):
+
+    # Store current position
+    trajectory_x.append(x)
+    trajectory_y.append(y)
+
+    # Update robot state
+    x = x + v * np.cos(theta) * dt
+    y = y + v * np.sin(theta) * dt
+    theta = theta + omega * dt
+
+# -----------------------------
 # Plot environment
+# -----------------------------
 plt.figure(figsize=(8, 8))
 
-# Robot
-plt.scatter(robot_x, robot_y, s=150, label="Robot")
-
-# Target
-plt.scatter(target_x, target_y, s=150, marker="*", label="Target")
-
-# Draw line between robot and target
+# Robot trajectory
 plt.plot(
-    [robot_x, target_x],
-    [robot_y, target_y],
-    linestyle="--",
-    label="Direct Path"
+    trajectory_x,
+    trajectory_y,
+    label="Robot Trajectory"
 )
 
-#Obstacle
+# Starting position
+plt.scatter(
+    trajectory_x[0],
+    trajectory_y[0],
+    s=150,
+    label="Start"
+)
+
+# Final position
+plt.scatter(
+    trajectory_x[-1],
+    trajectory_y[-1],
+    s=150,
+    marker="*",
+    label="Final Position"
+)
+
+# Obstacle
 plt.gca().add_patch(
-    plt.Rectangle((4, 4), 2, 2, fill=False)
+    plt.Rectangle(
+        (4, 4),
+        2,
+        2,
+        fill=False,
+        linewidth=2,
+        label="Obstacle"
+    )
 )
 
+# Plot limits
 plt.xlim(0, 10)
 plt.ylim(0, 10)
 
 plt.xlabel("X Position")
 plt.ylabel("Y Position")
 
-plt.title("Autonomous Mobile Robot Simulation")
+plt.title("Autonomous Mobile Robot — Motion Simulation")
 
 plt.grid(True)
 plt.legend()
