@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from src.sensors import ray_distance
+from src.controller import compute_control
 
 # -----------------------------
 # Robot initial state
@@ -8,6 +9,8 @@ from src.sensors import ray_distance
 x = 1.0
 y = 1.0
 theta = np.pi / 4
+target_x = 8.0
+target_y = 8.0
 
 # Save initial position for sensor visualization
 sensor_start_x = x
@@ -106,13 +109,70 @@ trajectory_y = []
 
 time_steps = int(simulation_time / dt)
 
-safety_distance = 2.0
+sensor_offsets = np.deg2rad([-60, -30, 0, 30, 60])
 
 for _ in range(time_steps):
 
-    # Store current position
+    # -----------------------------
+    # Sense environment
+    # -----------------------------
+
+    sensor_angles_current = theta + sensor_offsets
+
+    sensor_distances_current = []
+
+    for angle in sensor_angles_current:
+
+        distance = ray_distance(
+            x,
+            y,
+            angle,
+            obstacles
+        )
+
+        sensor_distances_current.append(distance)
+
+    # -----------------------------
+    # Controller
+    # -----------------------------
+
+    v, omega = compute_control(
+        x,
+        y,
+        theta,
+        target_x,
+        target_y,
+        sensor_angles_current,
+        sensor_distances_current
+    )
+
+    # -----------------------------
+    # Update robot state
+    # -----------------------------
+
+    x = x + v * np.cos(theta) * dt
+    y = y + v * np.sin(theta) * dt
+
+    theta = theta + omega * dt
+
+    # Store position
     trajectory_x.append(x)
     trajectory_y.append(y)
+
+    # -----------------------------
+    # Check target
+    # -----------------------------
+
+    distance_to_target = np.sqrt(
+        (target_x - x)**2 +
+        (target_y - y)**2
+    )
+
+    if distance_to_target < 0.15:
+
+        print("Target reached!")
+
+        break
 
     # -----------------------------
     # Sense environment
