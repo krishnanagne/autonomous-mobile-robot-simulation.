@@ -43,6 +43,9 @@ sensor_offsets = np.deg2rad([-60, -30, 0, 30, 60])
 trajectory_x = [x]
 trajectory_y = [y]
 
+true_x_values = []
+true_y_values = []
+
 measured_x_values = []
 measured_y_values = []
 
@@ -73,7 +76,11 @@ for step in range(time_steps):
         )
         sensor_distances_current.append(distance)
 
-    # 2. Simulate noisy position measurements
+    # 2. Store actual position at measurement time
+    true_x_values.append(x)
+    true_y_values.append(y)
+
+    # 3. Simulate noisy position measurements
     measured_x = x + np.random.normal(
         0, position_noise
     )
@@ -84,7 +91,7 @@ for step in range(time_steps):
     measured_x_values.append(measured_x)
     measured_y_values.append(measured_y)
 
-    # 3. Update moving-average filter
+    # 4. Update moving-average filter
     measurement_window.append(
         (measured_x, measured_y)
     )
@@ -102,7 +109,7 @@ for step in range(time_steps):
     filtered_x_values.append(estimated_x)
     filtered_y_values.append(estimated_y)
 
-    # 4. Calculate control commands
+    # 5. Calculate control commands
     v, omega = compute_control(
         estimated_x,
         estimated_y,
@@ -113,7 +120,7 @@ for step in range(time_steps):
         sensor_distances_current
     )
 
-    # 5. Update actual robot state
+    # 6. Update actual robot state
     x = x + v * np.cos(theta) * dt
     y = y + v * np.sin(theta) * dt
     theta = theta + omega * dt
@@ -128,7 +135,7 @@ for step in range(time_steps):
     trajectory_x.append(x)
     trajectory_y.append(y)
 
-    # 6. Check whether target is reached
+    # 7. Check whether target is reached
     distance_to_target = np.sqrt(
         (target_x - x) ** 2
         + (target_y - y) ** 2
@@ -140,16 +147,14 @@ for step in range(time_steps):
         break
 
 
-
 # -----------------------------
 # Simulation results and metrics
 # -----------------------------
 
 # 1. Navigation success
-if target_reached:
-    navigation_status = "SUCCESS"
-else:
-    navigation_status = "FAILED"
+navigation_status = (
+    "SUCCESS" if target_reached else "FAILED"
+)
 
 # 2. Actual path length
 trajectory_x_array = np.array(trajectory_x)
@@ -168,36 +173,33 @@ final_distance = np.sqrt(
     + (target_y - y) ** 2
 )
 
-# 4. Position estimation error
-# Compare estimates with actual positions at measurement times.
-actual_x_values = trajectory_x[1:len(filtered_x_values) + 1]
-actual_y_values = trajectory_y[1:len(filtered_y_values) + 1]
+# 4. Compare measurements and estimates with
+#    actual positions at the exact measurement times
+actual_x_array = np.array(true_x_values)
+actual_y_array = np.array(true_y_values)
 
-actual_x_array = np.array(actual_x_values)
-actual_y_array = np.array(actual_y_values)
+measured_x_array = np.array(measured_x_values)
+measured_y_array = np.array(measured_y_values)
 
 filtered_x_array = np.array(filtered_x_values)
 filtered_y_array = np.array(filtered_y_values)
 
-estimation_errors = np.sqrt(
-    (actual_x_array - filtered_x_array) ** 2
-    + (actual_y_array - filtered_y_array) ** 2
+# Raw measurement error
+raw_errors = np.sqrt(
+    (measured_x_array - actual_x_array) ** 2
+    + (measured_y_array - actual_y_array) ** 2
 )
 
-mean_estimation_error = np.mean(estimation_errors)
- # Compare raw and filtered position estimation errors
-
-raw_errors = np.sqrt(
-    (np.array(measured_x_values) - actual_x_array) ** 2
-    + (np.array(measured_y_values) - actual_y_array) ** 2
+# Filtered estimation error
+estimation_errors = np.sqrt(
+    (filtered_x_array - actual_x_array) ** 2
+    + (filtered_y_array - actual_y_array) ** 2
 )
 
 mean_raw_error = np.mean(raw_errors)
+mean_estimation_error = np.mean(estimation_errors)
 
-print(f"Mean raw measurement error: {mean_raw_error:.3f} units")
-print(f"Mean filtered estimation error: {mean_estimation_error:.3f} units")
-
-# 5. Approximate simulation duration
+# 5. Approximate simulated duration
 actual_steps = len(trajectory_x) - 1
 elapsed_time = actual_steps * dt
 
@@ -206,7 +208,8 @@ print("\nPERFORMANCE METRICS")
 print(f"Navigation status: {navigation_status}")
 print(f"Path length: {path_length:.2f} units")
 print(f"Final distance to target: {final_distance:.3f} units")
-print(f"Mean position estimation error: {mean_estimation_error:.3f} units")
+print(f"Mean raw measurement error: {mean_raw_error:.3f} units")
+print(f"Mean filtered estimation error: {mean_estimation_error:.3f} units")
 print(f"Simulation time: {elapsed_time:.2f} seconds")
 print(f"Simulation steps: {actual_steps}")
 print("======================================\n")
