@@ -140,17 +140,76 @@ for step in range(time_steps):
         break
 
 
-# -----------------------------
-# Simulation results
-# -----------------------------
-if not target_reached:
-    print(
-        f"Target not reached. "
-        f"Final distance: {distance_to_target:.2f}"
-    )
 
-print(f"Final robot position: ({x:.2f}, {y:.2f})")
-print(f"Target position: ({target_x:.2f}, {target_y:.2f})")
+# -----------------------------
+# Simulation results and metrics
+# -----------------------------
+
+# 1. Navigation success
+if target_reached:
+    navigation_status = "SUCCESS"
+else:
+    navigation_status = "FAILED"
+
+# 2. Actual path length
+trajectory_x_array = np.array(trajectory_x)
+trajectory_y_array = np.array(trajectory_y)
+
+step_distances = np.sqrt(
+    np.diff(trajectory_x_array) ** 2
+    + np.diff(trajectory_y_array) ** 2
+)
+
+path_length = np.sum(step_distances)
+
+# 3. Final distance from target
+final_distance = np.sqrt(
+    (target_x - x) ** 2
+    + (target_y - y) ** 2
+)
+
+# 4. Position estimation error
+# Compare estimates with actual positions at measurement times.
+actual_x_values = trajectory_x[1:len(filtered_x_values) + 1]
+actual_y_values = trajectory_y[1:len(filtered_y_values) + 1]
+
+actual_x_array = np.array(actual_x_values)
+actual_y_array = np.array(actual_y_values)
+
+filtered_x_array = np.array(filtered_x_values)
+filtered_y_array = np.array(filtered_y_values)
+
+estimation_errors = np.sqrt(
+    (actual_x_array - filtered_x_array) ** 2
+    + (actual_y_array - filtered_y_array) ** 2
+)
+
+mean_estimation_error = np.mean(estimation_errors)
+ # Compare raw and filtered position estimation errors
+
+raw_errors = np.sqrt(
+    (np.array(measured_x_values) - actual_x_array) ** 2
+    + (np.array(measured_y_values) - actual_y_array) ** 2
+)
+
+mean_raw_error = np.mean(raw_errors)
+
+print(f"Mean raw measurement error: {mean_raw_error:.3f} units")
+print(f"Mean filtered estimation error: {mean_estimation_error:.3f} units")
+
+# 5. Approximate simulation duration
+actual_steps = len(trajectory_x) - 1
+elapsed_time = actual_steps * dt
+
+# Display results
+print("\n===== DAY 7: PERFORMANCE METRICS =====")
+print(f"Navigation status: {navigation_status}")
+print(f"Path length: {path_length:.2f} units")
+print(f"Final distance to target: {final_distance:.3f} units")
+print(f"Mean position estimation error: {mean_estimation_error:.3f} units")
+print(f"Simulation time: {elapsed_time:.2f} seconds")
+print(f"Simulation steps: {actual_steps}")
+print("======================================\n")
 
 
 # -----------------------------
