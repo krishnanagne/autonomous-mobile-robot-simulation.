@@ -30,7 +30,7 @@ dt = 0.05
 simulation_time = 30
 time_steps = int(simulation_time / dt)
 
-position_noise = 0.1
+position_noise = 0.3
 window_size = 5
 
 # Five sensors relative to robot heading
@@ -202,7 +202,7 @@ actual_steps = len(trajectory_x) - 1
 elapsed_time = actual_steps * dt
 
 # Display results
-print("\n===== DAY 7: PERFORMANCE METRICS =====")
+print("\nPERFORMANCE METRICS")
 print(f"Navigation status: {navigation_status}")
 print(f"Path length: {path_length:.2f} units")
 print(f"Final distance to target: {final_distance:.3f} units")
